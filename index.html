@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Justiça pelo Orelha</title>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; color: white; display: flex; justify-content: center; align-items: center; overflow: hidden; font-family: sans-serif; }
+        
+        /* Tela de Início */
+        #splash-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; text-align: center; }
+        .btn-principal { padding: 15px 40px; font-size: 1.2rem; color: #fff; background: none; border: 2px solid #fff; border-radius: 50px; cursor: pointer; transition: 0.3s; margin-top: 20px; text-transform: uppercase; letter-spacing: 2px; }
+        .btn-principal:hover { background: white; color: black; box-shadow: 0 0 20px rgba(255,255,255,0.4); }
+
+        /* Container de Slides */
+        .slideshow-container { display: none; width: 100%; height: 100vh; position: relative; flex-direction: column; justify-content: center; align-items: center; }
+        .slide { display: none; width: 100%; height: 100%; justify-content: center; align-items: center; flex-direction: column; text-align: center; }
+        .slide img { max-width: 90%; max-height: 60vh; border-radius: 15px; box-shadow: 0 0 40px rgba(255,255,255,0.2); }
+        
+        .fade { animation: fadeAnim 3s ease-in-out; }
+        @keyframes fadeAnim { from {opacity: 0} to {opacity: 1} }
+
+        /* Legenda da Foto 0 */
+        .aviso-inicial { margin-top: 20px; font-style: italic; color: #bbb; font-size: 1.1rem; max-width: 80%; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+        
+        /* Área de Interação Final */
+        #interaction-area { display: none; flex-direction: column; align-items: center; margin-top: 25px; width: 100%; animation: fadeAnim 4s; }
+        .like-section { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .like-btn { font-size: 3.5rem; background: none; border: none; cursor: pointer; transition: 0.3s; filter: grayscale(1); }
+        .like-btn.active { filter: grayscale(0); transform: scale(1.3); }
+        #counter { font-size: 2rem; color: #ff4b5c; font-weight: bold; }
+        
+        .comment-box { width: 85%; max-width: 450px; display: flex; gap: 10px; }
+        input { flex: 1; padding: 12px; border-radius: 8px; border: none; font-size: 1rem; background: rgba(255,255,255,0.9); color: #000; outline: none; }
+        .send-btn { padding: 10px 20px; background: #ff4b5c; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .send-btn:hover { background: #ff2a3d; }
+    </style>
+</head>
+<body>
+
+    <div id="splash-screen">
+        <h1 style="font-weight: 300; letter-spacing: 4px;">JUSTIÇA PELO ORELHA</h1>
+        <button class="btn-principal" onclick="iniciar()">ABRIR HOMENAGEM</button>
+    </div>
+
+    <div class="slideshow-container" id="container">
+        
+        <div class="slide fade">
+            <img src="foto0.png">
+            <p class="aviso-inicial">Acompanhe esta história até o fim e deixe seu apoio ao Orelha.</p>
+        </div> 
+
+        <div class="slide fade"><img src="foto1.png"></div>
+        <div class="slide fade"><img src="foto2.png"></div>
+        <div class="slide fade"><img src="foto3.png"></div>
+        
+        <div class="slide fade">
+            <img src="foto4.png">
+            <div id="interaction-area">
+                <div class="like-section">
+                    <button class="like-btn" id="coracao" onclick="addLike()">❤️</button>
+                    <span id="counter">Carregando...</span>
+                </div>
+                <div class="comment-box">
+                    <input type="text" id="userMsg" placeholder="Sua mensagem de justiça...">
+                    <button class="send-btn" onclick="salvarMsg()">ENVIAR</button>
+                </div>
+                <p id="feedback" style="display:none; color: #00ff00; margin-top: 10px; font-weight: bold;">Sua voz foi ouvida!</p>
+            </div>
+        </div>
+    </div>
+
+    <audio id="musica" loop><source src="SOM1.mp3" type="audio/mpeg"></audio>
+
+    <script>
+        // Configurações do seu Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyCct48iZoGG_rgis0kVLmqlov8qSs0aT7s",
+            authDomain: "homenagem-orelha.firebaseapp.com",
+            projectId: "homenagem-orelha",
+            storageBucket: "homenagem-orelha.firebasestorage.app",
+            messagingSenderId: "267557325558",
+            appId: "1:267557325558:web:7230929c2e9c12fcbf3ad7",
+            databaseURL: "https://homenagem-orelha-default-rtdb.firebaseio.com"
+        };
+
+        // Inicialização
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const likesRef = db.ref('likes');
+
+        // Atualização do contador global
+        likesRef.on('value', (snapshot) => {
+            const val = snapshot.val();
+            document.getElementById('counter').innerText = val || 0;
+        });
+
+        let index = 0;
+
+        function iniciar() {
+            document.getElementById("musica").play();
+            document.getElementById("splash-screen").style.opacity = "0";
+            setTimeout(() => {
+                document.getElementById("splash-screen").style.display = "none";
+                document.getElementById("container").style.display = "flex";
+                rodar();
+            }, 1000);
+        }
+
+        function rodar() {
+            let s = document.getElementsByClassName("slide");
+            for (let i = 0; i < s.length; i++) s[i].style.display = "none";
+            
+            index++;
+            
+            if (index === s.length) {
+                // Para no último slide com a foto 4 e mostra a interação
+                s[index-1].style.display = "flex";
+                document.getElementById("interaction-area").style.display = "flex";
+                return;
+            }
+            
+            s[index-1].style.display = "flex";
+            // Cada slide dura 8 segundos
+            setTimeout(rodar, 8000);
+        }
+
+        function addLike() {
+            // Incrementa no Firebase para todos verem
+            likesRef.transaction((current) => (current || 0) + 1);
+            document.getElementById('coracao').classList.add('active');
+        }
+
+        function salvarMsg() {
+            const msg = document.getElementById('userMsg').value;
+            if(msg !== "") {
+                db.ref('mensagens').push({ 
+                    texto: msg, 
+                    horario: new Date().toLocaleString() 
+                });
+                document.getElementById('feedback').style.display = "block";
+                document.getElementById('userMsg').value = "";
+            }
+        }
+    </script>
+</body>
+</html>

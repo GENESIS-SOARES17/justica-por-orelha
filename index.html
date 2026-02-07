@@ -6,54 +6,46 @@
     <title>Justiça pelo Orelha</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
-    
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; color: white; display: flex; justify-content: center; align-items: center; overflow: hidden; font-family: sans-serif; }
         
-        /* Tela de Início */
+        /* Ícone do Cadeado (Modo Dono) */
+        #cadeado-dono { position: fixed; top: 20px; right: 20px; font-size: 1.5rem; cursor: pointer; z-index: 2000; opacity: 0.3; transition: 0.3s; }
+        #cadeado-dono.ativo { opacity: 1; color: #ffdb58; transform: scale(1.2); }
+
         #splash-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; text-align: center; }
         .btn-principal { padding: 15px 40px; font-size: 1.2rem; color: #fff; background: none; border: 2px solid #fff; border-radius: 50px; cursor: pointer; transition: 0.3s; margin-top: 20px; text-transform: uppercase; letter-spacing: 2px; }
         .btn-principal:hover { background: white; color: black; box-shadow: 0 0 20px rgba(255,255,255,0.4); }
-
-        /* Container de Slides */
-        .slideshow-container { display: none; width: 100%; height: 100vh; position: relative; flex-direction: column; justify-content: center; align-items: center; overflow-y: auto; }
+        
+        .slideshow-container { display: none; width: 100%; height: 100vh; position: relative; flex-direction: column; justify-content: center; align-items: center; }
         .slide { display: none; width: 100%; height: 100%; justify-content: center; align-items: center; flex-direction: column; text-align: center; padding: 20px; box-sizing: border-box; }
-        .slide img { max-width: 90%; max-height: 50vh; border-radius: 15px; box-shadow: 0 0 40px rgba(255,255,255,0.2); }
+        .slide img { max-width: 90%; max-height: 45vh; border-radius: 15px; box-shadow: 0 0 40px rgba(255,255,255,0.2); }
         
         .fade { animation: fadeAnim 3s ease-in-out; }
         @keyframes fadeAnim { from {opacity: 0} to {opacity: 1} }
-
-        /* Área de Interação Final */
-        #interaction-area { display: none; flex-direction: column; align-items: center; margin-top: 20px; width: 100%; max-width: 500px; }
-        .like-section { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
-        .like-btn { font-size: 3rem; background: none; border: none; cursor: pointer; transition: 0.3s; filter: grayscale(1); }
-        .like-btn.active { filter: grayscale(0); transform: scale(1.2); }
-        #counter { font-size: 1.8rem; color: #ff4b5c; font-weight: bold; }
         
-        .comment-box { width: 90%; display: flex; gap: 10px; margin-bottom: 20px; }
+        #interaction-area { display: none; flex-direction: column; align-items: center; margin-top: 15px; width: 100%; max-width: 500px; }
+        .like-section { display: flex; align-items: center; gap: 15px; margin-bottom: 10px; }
+        .like-btn { font-size: 2.5rem; background: none; border: none; cursor: pointer; transition: 0.3s; filter: grayscale(1); }
+        .like-btn.active { filter: grayscale(0); transform: scale(1.2); }
+        #counter { font-size: 1.5rem; color: #ff4b5c; font-weight: bold; }
+        
+        .comment-box { width: 90%; display: flex; gap: 10px; margin-bottom: 15px; }
         input { flex: 1; padding: 12px; border-radius: 8px; border: none; font-size: 1rem; background: rgba(255,255,255,0.9); color: #000; outline: none; }
         .send-btn { padding: 10px 20px; background: #ff4b5c; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-
-        /* NOVO: Estilo do Mural de Recados */
-        #mural {
-            width: 90%;
-            height: 150px;
-            overflow-y: auto;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            padding: 10px;
-            text-align: left;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .msg-item { border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding: 8px 0; font-size: 0.85rem; line-height: 1.4; }
+        
+        #mural { width: 90%; height: 130px; overflow-y: auto; background: rgba(255, 255, 255, 0.05); border-radius: 10px; padding: 10px; text-align: left; border: 1px solid rgba(255, 255, 255, 0.1); margin-top: 5px; }
+        .msg-item { border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding: 6px 0; font-size: 0.85rem; line-height: 1.3; }
         .msg-data { display: block; font-size: 0.7rem; color: #888; }
-
-        /* Barra de rolagem elegante */
+        
         #mural::-webkit-scrollbar { width: 4px; }
         #mural::-webkit-scrollbar-thumb { background: #ff4b5c; border-radius: 10px; }
+        #feedback { color: #00ff00; font-size: 0.8rem; margin-top: 5px; display: none; }
     </style>
 </head>
 <body>
+
+    <div id="cadeado-dono" onclick="ativarModoDono()">🔒</div>
 
     <div id="splash-screen">
         <h1 style="font-weight: 300; letter-spacing: 4px;">JUSTIÇA PELO ORELHA</h1>
@@ -61,11 +53,10 @@
     </div>
 
     <div class="slideshow-container" id="container">
-        <div class="slide fade"><img src="foto0.png"><p style="color: #bbb; margin-top:15px;">Acompanhe até o fim e deixe seu recado.</p></div> 
+        <div class="slide fade"><img src="foto0.png"><p style="color: #bbb; margin-top:10px;">Acompanhe até o fim e deixe seu recado.</p></div> 
         <div class="slide fade"><img src="foto1.png"></div>
         <div class="slide fade"><img src="foto2.png"></div>
         <div class="slide fade"><img src="foto3.png"></div>
-        
         <div class="slide fade">
             <img src="foto4.png">
             <div id="interaction-area">
@@ -74,12 +65,12 @@
                     <span id="counter">0</span>
                 </div>
                 <div class="comment-box">
-                    <input type="text" id="userMsg" placeholder="Deixe sua mensagem...">
+                    <input type="text" id="userMsg" placeholder="Sua mensagem...">
                     <button class="send-btn" onclick="salvarMsg()">ENVIAR</button>
                 </div>
-                
-                <h4 style="margin: 0 0 10px 0; color: #888; font-weight: 300; font-size: 0.9rem;">Mural de Recados</h4>
-                <div id="mural">Carregando mensagens...</div>
+                <p id="feedback"></p>
+                <h4 style="margin: 0 0 5px 0; color: #888; font-weight: 300; font-size: 0.8rem;">Mural de Recados</h4>
+                <div id="mural">Carregando...</div>
             </div>
         </div>
     </div>
@@ -99,15 +90,11 @@
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-
-        // Referências
         const likesRef = db.ref('likes');
         const msgRef = db.ref('mensagens');
 
-        // Atualiza likes em tempo real
+        // Carrega Likes e Mural
         likesRef.on('value', (s) => { document.getElementById('counter').innerText = s.val() || 0; });
-
-        // Atualiza mural em tempo real
         msgRef.on('value', (snapshot) => {
             const mural = document.getElementById('mural');
             mural.innerHTML = "";
@@ -119,10 +106,27 @@
                     div.innerHTML = `<span class="msg-data">${m.horario}</span>${m.texto}`;
                     mural.appendChild(div);
                 });
-            } else {
-                mural.innerHTML = "Seja o primeiro a deixar um recado.";
-            }
+            } else { mural.innerHTML = "Seja o primeiro a deixar um recado."; }
         });
+
+        // Função do Cadeado
+        function ativarModoDono() {
+            const senha = prompt("Digite a senha do proprietário:");
+            if (senha === "DONO123") {
+                localStorage.setItem('modo_dono', "true");
+                document.getElementById('cadeado-dono').innerText = "🔓";
+                document.getElementById('cadeado-dono').classList.add('ativo');
+                alert("Modo Dono Ativado! Limites removidos.");
+            } else {
+                alert("Senha incorreta.");
+            }
+        }
+
+        // Verifica estado ao carregar
+        if (localStorage.getItem('modo_dono') === "true") {
+            document.getElementById('cadeado-dono').innerText = "🔓";
+            document.getElementById('cadeado-dono').classList.add('ativo');
+        }
 
         let index = 0;
         function iniciar() {
@@ -152,9 +156,21 @@
 
         function salvarMsg() {
             const t = document.getElementById('userMsg').value;
-            if(t) {
+            const f = document.getElementById('feedback');
+            if(!t) return;
+
+            let envios = parseInt(localStorage.getItem('envios_orelha') || "0");
+            let modoDono = localStorage.getItem('modo_dono') === "true";
+
+            if (modoDono || envios < 3) {
                 msgRef.push({ texto: t, horario: new Date().toLocaleString('pt-BR') });
+                if (!modoDono) localStorage.setItem('envios_orelha', envios + 1);
                 document.getElementById('userMsg').value = "";
+                f.innerText = "Recado enviado!";
+                f.style.display = "block";
+                setTimeout(() => { f.style.display = "none"; }, 3000);
+            } else {
+                alert("Limite de 3 mensagens atingido. Obrigado pelo apoio!");
             }
         }
     </script>
